@@ -55,22 +55,41 @@ def generate_baseline(n: int = 15_000, fraud_pct: float = 0.005, seed: int = 42)
     """
     Synthetic credit-card transactions that mimic the Kaggle fraud dataset structure.
     V1-V20: PCA-style numeric features | Amount: log-normal | Class: 0=legit, 1=fraud
-    Fraud transactions have deliberately shifted feature distributions.
+
+    Realistic design:
+    - Only 5 of 20 features are actually discriminative (like real PCA-transformed fraud data)
+    - Feature shifts are 0.8-1.5 sigma apart — enough to learn from, not trivially separable
+    - Both classes share similar variance (fraud is not 1.8x noisier)
+    - Amount distributions overlap meaningfully
+    Target baseline AUC-ROC: ~0.93-0.97 (realistic for a fraud model, not 1.0)
     """
     rng = np.random.default_rng(seed)
 
     n_fraud = max(int(n * fraud_pct), 50)
     n_legit = n - n_fraud
 
-    # Legitimate transaction features
+    # ── Legitimate transactions ──────────────────────────────────
+    # All 20 features drawn from N(0,1); only 5 get a small class-level shift
     L = rng.standard_normal((n_legit, 20))
-    L[:, 0] -= 1.5;  L[:, 1] += 2.0;  L[:, 2] -= 2.5;  L[:, 3] += 3.0
-    amt_L = rng.lognormal(4.5, 1.0, n_legit)
+    L[:, 0] -= 0.4   # V1: legit slightly negative
+    L[:, 1] += 0.6   # V2: legit slightly positive
+    L[:, 2] -= 0.5   # V3
+    L[:, 3] += 0.7   # V4
+    L[:, 4] -= 0.3   # V5
+    # V6-V20: pure noise, no class signal
+    amt_L = rng.lognormal(4.2, 1.1, n_legit)   # typical transaction amounts
 
-    # Fraud transaction features (clearly different distributions)
-    F = rng.standard_normal((n_fraud, 20)) * 1.8
-    F[:, 0] += 4.0;  F[:, 1] -= 6.0;  F[:, 2] += 3.5;  F[:, 3] -= 4.0
-    amt_F = rng.lognormal(5.5, 1.5, n_fraud)
+    # ── Fraud transactions ───────────────────────────────────────
+    # Same variance as legit (std ≈ 1.0-1.1), moderate shifts on same 5 features
+    # This creates real overlap — model must learn, not just threshold
+    F = rng.standard_normal((n_fraud, 20)) * 1.1   # slightly higher noise
+    F[:, 0] += 1.4   # V1: fraud pulls in opposite direction (total gap ~1.8)
+    F[:, 1] -= 1.8   # V2: total gap ~2.4 — most discriminative feature
+    F[:, 2] += 1.2   # V3: total gap ~1.7
+    F[:, 3] -= 1.5   # V4: total gap ~2.2
+    F[:, 4] += 0.9   # V5: total gap ~1.2 — weakest signal
+    # V6-V20: also pure noise for fraud
+    amt_F = rng.lognormal(4.5, 1.3, n_fraud)   # slightly higher amounts, but overlapping
 
     X   = np.vstack([L, F])
     amt = np.concatenate([amt_L, amt_F])
@@ -223,6 +242,18 @@ def gen_alerts(base_m: dict, curr_m: dict, psi_dict: dict,
         elif drop >= 0.02:
             alerts.append(("🟡 WARNING", "Performance",
                 f"AUC-ROC declining — {drop:.4f} below baseline",
+                "Schedule model review within 30 days"))
+
+    # Recall degradation
+    if curr_m.get("Recall") is not None:
+        r_drop = base_m["Recall"] - curr_m["Recall"]
+        if r_drop >= 0.10:
+            alerts.append(("🔴 CRITICAL", "Performance",
+                f"Recall dropped {r_drop:.4f} below baseline ({base_m['Recall']} → {curr_m['Recall']}) — rising missed-fraud rate",
+                "Emergency model review; escalate to Model Risk Committee"))
+        elif r_drop >= 0.05:
+            alerts.append(("🟡 WARNING", "Performance",
+                f"Recall declining — {r_drop:.4f} below baseline",
                 "Schedule model review within 30 days"))
 
     # PSI breaches
