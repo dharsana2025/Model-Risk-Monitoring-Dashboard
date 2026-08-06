@@ -12,7 +12,7 @@ This is what model risk teams at banks like AmEx actually do after a model goes 
 
 ## The regulatory context (India)
 
-RBI's May 2023 Draft Circular on Model Risk Management explicitly requires banks to monitor models on an ongoing basis — checking for population drift, performance degradation, and changing risk patterns. This is not optional and it is not a one-time exercise. The circular draws from the same principles as the US Federal Reserve's SR 11-7 guidance, which shapes how global banks like AmEx govern their internal model risk frameworks.
+RBI's August 2024 draft circular, "Regulatory Principles for Management of Model Risks in Credit," explicitly requires banks to monitor models on an ongoing basis — checking for population drift, performance degradation, and changing risk patterns. This is not optional and it is not a one-time exercise. The circular draws from the same principles as the US Federal Reserve's SR 11-7 guidance, which shapes how global banks like AmEx govern their internal model risk frameworks.
 
 Most ML projects demonstrate the ability to build a model. This one demonstrates the ability to govern one — which is what RBI and AmEx's MRMG are actually asking for.
 
@@ -98,4 +98,3 @@ All of this runs locally. The only thing that touches the network is pip install
 ## A note on the data
 
 Everything is synthetic. The feature distributions were calibrated to produce realistic model behavior — good baseline AUC, plausible degradation curves, drift patterns that match what you'd see in real production monitoring. But this is not real transaction data and the model should not be used to make any real decisions. It is a demonstration of the monitoring methodology.
-
