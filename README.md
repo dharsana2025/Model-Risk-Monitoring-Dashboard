@@ -63,6 +63,8 @@ Second, the transaction amount distribution inflates each month — simulating e
 Third, from month three onward, a small number of previously legitimate transactions are relabeled as fraud — simulating a new fraud ring using a technique the model hasn't seen before. This is the part that causes the sharpest performance degradation in the later months.
 
 ---
+<img width="1914" height="2326" alt="Dashboard_overview" src="https://github.com/user-attachments/assets/feea18a4-741a-438f-8a8f-7983f93c942f" />
+
 
 ## PSI thresholds
 
